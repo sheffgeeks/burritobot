@@ -77,7 +77,7 @@ class IRCCommsProvider(CommsProvider):
                                   'help': "sets the irc server and port, "
                                           "defaults to irc.freenode.net:6667",
                                   'metavar': "SERVER[:PORT]"}),
-            (('--irc-nick', ), {'default': "burritobot",
+            (('--irc-nick', ), {'default': "temporaryname",
                                 'help': "sets the nick for the bot"}),
             (('--irc-realname', ), {'default': "BurritoBot",
                                     'help': "sets the realname of the bot"}),
