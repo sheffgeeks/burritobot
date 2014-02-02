@@ -15,4 +15,4 @@ class CmdsProvider(metaclass=PluginMount):
     def list_commands(self):
         """Return list of commands
         """
-        return self.cmds.keys()
+        return [k for k in self.cmds.keys()]
