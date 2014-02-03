@@ -16,3 +16,7 @@ class Greetings(CmdsProvider):
     def cmd_greet(self, command, data):
         return reply_to_user(data,
                              random.choice(self.local_data['replies']))
+
+    def list_commands(self):
+        # override to hide the commands
+        return []
