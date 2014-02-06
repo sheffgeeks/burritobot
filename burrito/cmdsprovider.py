@@ -10,9 +10,13 @@ class CmdsProvider(metaclass=PluginMount):
     def match_command(self, command, conn_obj, data):
         """Match commands
         """
-        return self.cmds.get(command.lower()), data
+        lcmd = command.split(':')[0].lower()
+        fn = self.cmds[lcmd]['function'] if lcmd in self.cmds else None
+
+        return fn, data
 
     def list_commands(self):
         """Return list of commands
         """
-        return [k for k in self.cmds.keys()]
+        return [': '.join((k, v['description']))
+                for k, v in self.cmds.items() if v.get('description')]

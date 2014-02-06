@@ -53,7 +53,8 @@ class IRCBot(SingleServerIRCBot):
 # IRC specific commands
 class IRCCommands(CmdsProvider):
     def __init__(self):
-        self.cmds = {'die': self.cmd_die}
+        self.cmds = {'die': {'function': self.cmd_die,
+                             'description': None}}
 
     def match_command(self, command, conn_obj, data):
         if isinstance(conn_obj, IRCBot):

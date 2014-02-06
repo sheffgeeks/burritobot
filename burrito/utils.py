@@ -17,21 +17,26 @@ def do_command(command, target, source_user, conn_obj, connection,
             if torun is None:
                 torun = f
         except Exception as e:
-            logging.error(e.msg)
+            logging.error(str(e))
 
     # only run the one function if spoken to
     if to_me:
         if torun is not None:
             responses = torun(command, data)
-            for resp in responses:
-                connection.privmsg(target, resp)
+            if responses:
+                for resp in responses:
+                    connection.privmsg(target, resp)
 
 
 def reply_to_user(data, reply):
     if isinstance(reply, str):
         head, tail = reply, []
     else:
-        head, tail = reply[0], reply[1:]
+        try:
+            head, tail = reply[0], reply[1:]
+        except TypeError:
+            logging.warning('type error for reply to user')
+            head, tail = '', []
     headoutput = [": ".join([data['source_user'], head])]
     return headoutput + tail
 
