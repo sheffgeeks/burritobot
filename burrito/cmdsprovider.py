@@ -7,6 +7,9 @@ class CmdsProvider(metaclass=PluginMount):
     """Mount point for commands
     """
 
+    def pre_process(self, command, conn_obj, data):
+        return command, data
+
     def match_command(self, command, conn_obj, data):
         """Match commands
         """

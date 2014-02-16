@@ -31,6 +31,12 @@ class IRCBot(SingleServerIRCBot):
             if irc.client.is_channel(channel):
                 conn.join(channel)
 
+    def on_ctcp(self, conn, event):
+        self.do_command(event, event.arguments[0], to_me=True)
+
+    def on_action(self, conn, event):
+        self.do_command(event, event.arguments[0], to_me=True)
+
     def on_privmsg(self, conn, event):
         self.do_command(event, event.arguments[0], to_me=True)
 
@@ -46,7 +52,11 @@ class IRCBot(SingleServerIRCBot):
         self.do_command(event, message, to_me)
 
     def do_command(self, event, args, to_me):
-        do_command(args, event.target, event.source.nick, self,
+        try:
+            nick = event.source.nick
+        except AttributeError:
+            nick = event.source.split('!~')[0]
+        do_command(args, event.target, nick, self,
                    self.connection, to_me=to_me)
 
 
@@ -100,7 +110,6 @@ class IRCCommsProvider(CommsProvider):
         self.conn = c
 
     def run(self):
-        #self.conn.start()
         while True:
             try:
                 self.run_once()
@@ -108,4 +117,7 @@ class IRCCommsProvider(CommsProvider):
                 logging.warn(e.msg)
 
     def run_once(self):
-        self.conn.ircobj.process_once()
+        try:
+            self.conn.ircobj.process_once()
+        except UnicodeDecodeError as e:
+            logging.warning('UnicodeDecodeError %s' % str(e))
