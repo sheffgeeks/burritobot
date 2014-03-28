@@ -21,17 +21,19 @@ class LocatorCmds(CmdsProvider):
         splitcmd = [a.strip() for a in command.split(':')]
         who = splitcmd[1]
         reply = []
+        if who == data['source_user']:
+            reply.append("Don't you know where you are?")
+
         if who not in self.location_data:
             replystr = "No idea!"
+            reply.append(replystr)
         else:
             replystr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
             replydict = {'who': who}
             replydict.update(self.location_data[who][-1])
             replydict['whenstr'] = prettier_date(replydict['when'])
 
-        if who == data['source_user']:
-            reply.append("Don't you know where you are?")
-        reply.append(replystr % replydict)
+            reply.append(replystr % replydict)
 
         return reply_to_user(data, reply)
 

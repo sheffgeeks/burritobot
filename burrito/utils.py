@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 import logging
 import traceback
 from datetime import datetime
@@ -28,12 +28,9 @@ def do_command(command, target, source_user, conn_obj, connection,
             logging.error(traceback.format_exc())
 
     # only run the one function if spoken to
-    if to_me:
-        if torun is not None:
-            responses = torun(command, data)
-            if responses:
-                for resp in responses:
-                    connection.privmsg(target, resp)
+    responses = torun(command, data) if to_me and torun is not None else []
+    for resp in responses:
+        connection.privmsg(target, resp)
 
 
 def reply_to_user(data, reply):
