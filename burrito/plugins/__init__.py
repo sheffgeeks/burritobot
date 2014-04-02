@@ -1,1 +1,2 @@
-__all__ = ['ircbot', 'greetings', 'dates', 'listcommands', 'locator']
+__all__ = ['ircbot', 'greetings', 'dates', 'listcommands', 'locator',
+           'dictionary']

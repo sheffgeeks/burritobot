@@ -2,6 +2,7 @@
 import logging
 import traceback
 from datetime import datetime
+from time import sleep
 
 from burrito.cmdsprovider import CmdsProvider
 
@@ -29,8 +30,14 @@ def do_command(command, target, source_user, conn_obj, connection,
 
     # only run the one function if spoken to
     responses = torun(command, data) if to_me and torun is not None else []
-    for resp in responses:
+    for i, resp in enumerate(responses):
+        sleep(0.1 * i)
         connection.privmsg(target, resp)
+
+
+def chop_by_length(data, chunksize):
+    size = len(data)
+    return [data[i:i + chunksize] for i in range(0, size, chunksize)]
 
 
 def reply_to_user(data, reply):
@@ -43,7 +50,11 @@ def reply_to_user(data, reply):
             logging.warning('type error for reply to user')
             head, tail = '', []
     headoutput = [": ".join([data['source_user'], head])]
-    return headoutput + tail
+    alloutput = headoutput + tail
+    output = []
+    for line in alloutput:
+        output.extend(chop_by_length(line, 256))
+    return output
 
 
 def extract_irc_info(command, target, source_user, conn_obj, cmd_sep=':'):
