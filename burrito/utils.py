@@ -45,7 +45,8 @@ def reply_to_user(data, reply):
         head, tail = reply, []
     else:
         try:
-            head, tail = reply[0], reply[1:]
+            head = reply[0] if len(reply) else ''
+            tail = reply[1:] if len(reply) > 1 else []
         except TypeError:
             logging.warning('type error for reply to user')
             head, tail = '', []
