@@ -21,5 +21,15 @@ python setup.py develop
 To run:
 
 ```sh
-burritobot
+burritobot --irc-channels "#channel1" "#channel2" --irc-nick mynick
 ```
+
+The above will connect as mynick on freenode, joining #channel1 and #channel2.
+
+Run:
+
+```sh
+burritobot --help
+```
+
+to discover any further options.
