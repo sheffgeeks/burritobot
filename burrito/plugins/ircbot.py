@@ -17,9 +17,10 @@ class IRCBot(SingleServerIRCBot):
     def __init__(self, server_list, nickname, realname,
                  reconnection_interval=60, channels=None,
                  **connect_params):
-        self.chan_list = ([] if channels is None else
-                          [channels, ] if isinstance(channels, str)
-                          else channels)
+        clist = ([] if channels is None else
+                 [channels, ] if isinstance(channels, str)
+                 else channels)
+        self.chan_list = [c if c.startswith('#') else '#' + c for c in clist]
         super(IRCBot, self).__init__(server_list, nickname, realname,
                                      reconnection_interval, **connect_params)
 
