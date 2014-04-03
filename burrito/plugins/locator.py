@@ -1,13 +1,15 @@
 from burrito.cmdsprovider import CmdsProvider
 from burrito.utils import reply_to_user, prettier_date
 from datetime import datetime
+import shelve
+
 
 ENROUTE_CMDS = ['->', '=>']
 LOCATION_CMDS = ['@']
 
 
 class LocatorCmds(CmdsProvider):
-    location_data = {}
+    loc_file = 'locations'
 
     def __init__(self):
         whereis = {'function':  self.cmd_whereis,
@@ -24,16 +26,19 @@ class LocatorCmds(CmdsProvider):
         if who == data['source_user']:
             reply.append("Don't you know where you are?")
 
-        if who not in self.location_data:
-            replystr = "No idea!"
+        try:
+            loc_data = shelve.open(self.loc_file)
+            if who not in loc_data:
+                replystr = "No idea!"
+            else:
+                replyfmtstr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
+                replydict = {'who': who}
+                replydict.update(loc_data[who][-1])
+                replydict['whenstr'] = prettier_date(replydict['when'])
+                replystr = replyfmtstr % replydict
+        finally:
             reply.append(replystr)
-        else:
-            replystr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
-            replydict = {'who': who}
-            replydict.update(self.location_data[who][-1])
-            replydict['whenstr'] = prettier_date(replydict['when'])
-
-            reply.append(replystr % replydict)
+            loc_data.close()
 
         return reply_to_user(data, reply)
 
@@ -41,12 +46,18 @@ class LocatorCmds(CmdsProvider):
         entry = {'when': when,
                  'atstr': atstr,
                  'where': where.strip()}
-        if nick not in self.location_data:
-            self.location_data[nick] = [entry]
-        elif len(self.location_data[nick]) < 5:
-            self.location_data[nick].append(entry)
-        else:
-            self.location_data[nick] = self.location_data[nick][1:] + [entry]
+        try:
+            loc_data = shelve.open(self.loc_file)
+            if nick not in loc_data:
+                loc_data[nick] = [entry]
+            elif len(loc_data[nick]) < 5:
+                tmp_data = loc_data[nick]
+                tmp_data.append(entry)
+                loc_data[nick] = tmp_data
+            else:
+                loc_data[nick] = loc_data[nick][1:] + [entry]
+        finally:
+            loc_data.close()
 
     def splitcmd(self, command, op, data):
         if command.startswith(op):
