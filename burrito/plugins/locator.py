@@ -15,9 +15,25 @@ class LocatorCmds(CmdsProvider):
         whereis = {'function':  self.cmd_whereis,
                    'description': "attempts to tell you where someone is",
                    'args': ['nick']}
+        whereiseveryone = {
+            'function': self.cmd_whereiseveryone,
+            'description': "reports all known last locations"}
         self.cmds = {'whereis': whereis,
                      'where is': whereis,
+                     'where is everyone': whereiseveryone,
                      }
+
+    def cmd_whereiseveryone(self, command, data):
+        try:
+            loc_data = shelve.open(self.loc_file)
+            reply = ['{0}: {1} ({2})'.format(nick, loc[-1]['where'],
+                                             prettier_date(loc[-1]['when']))
+                     for nick, loc in loc_data.items()]
+        except:
+            reply = []
+        finally:
+            loc_data.close()
+        return reply_to_user(data, reply)
 
     def cmd_whereis(self, command, data):
         splitcmd = [a.strip() for a in command.split(':')]
