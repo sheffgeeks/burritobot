@@ -6,6 +6,7 @@ import shelve
 
 ENROUTE_CMDS = ['->', '=>']
 LOCATION_CMDS = ['@']
+NOLOC = ['none', 'nul', 'null', 'remove', 'nowhere', 'awesome']
 
 
 class LocatorCmds(CmdsProvider):
@@ -20,17 +21,29 @@ class LocatorCmds(CmdsProvider):
             'description': "reports all known last locations"}
         self.cmds = {'whereis': whereis,
                      'where is': whereis,
+                     'whereiseveryone': whereiseveryone,
                      'where is everyone': whereiseveryone,
+                     'whereiseverybody': whereiseveryone,
+                     'where is everybody': whereiseveryone,
                      }
 
     def cmd_whereiseveryone(self, command, data):
         try:
             loc_data = shelve.open(self.loc_file)
-            reply = ['{0}: {1} ({2})'.format(nick, loc[-1]['where'],
-                                             prettier_date(loc[-1]['when']))
-                     for nick, loc in loc_data.items()]
+            asker = data['source_user']
+            reply = [
+                '_{0}_: {1} ({2})'.format(nick, loc[-1]['where'],
+                                          prettier_date(loc[-1]['when']))
+                for nick, loc in loc_data.items()
+                if nick != asker and loc[-1]['where'].lower() not in NOLOC
+            ]
+            if not reply:
+                if asker in loc_data:
+                    reply = ['You are the only one I know about!']
+                else:
+                    reply = ['Nobody has told me anything!']
         except:
-            reply = []
+            reply = ['(shh.. someone made me do something wrong!)']
         finally:
             loc_data.close()
         return reply_to_user(data, reply)
@@ -46,12 +59,16 @@ class LocatorCmds(CmdsProvider):
             loc_data = shelve.open(self.loc_file)
             if who not in loc_data:
                 replystr = "No idea!"
+            elif loc_data[who][-1]['where'].lower() in NOLOC:
+                replystr = "Who knows?"
             else:
                 replyfmtstr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
                 replydict = {'who': who}
                 replydict.update(loc_data[who][-1])
                 replydict['whenstr'] = prettier_date(replydict['when'])
                 replystr = replyfmtstr % replydict
+        except:
+            reply = ['(shh.. someone made me do something wrong!)']
         finally:
             reply.append(replystr)
             loc_data.close()
