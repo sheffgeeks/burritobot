@@ -2,6 +2,7 @@ import argparse
 import configparser
 import logging
 import os
+import time
 
 from burrito.commsprovider import CommsProvider
 from burrito.plugins import *
@@ -69,6 +70,7 @@ def run():
     while True:
         for comms in comms_providers:
             comms.run_once()
+        time.sleep(0.05)
 
 if __name__ == "__main__":
     run()
