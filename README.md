@@ -21,7 +21,7 @@ pip install irc
 python setup.py install
 ```
 
-### Using Vagrant > 1.3.0:
+### Option 2: Using Vagrant (>= 1.3.0):
 
 This method assumes a fairly recent version of Vagrant is already installed
 (see the [vagrant website](http://www.vagrantup.com).)
