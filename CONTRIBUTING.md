@@ -88,12 +88,14 @@ Currently the process is a little clunky but should not be hugely difficult.
   from burrito.utils import reply_to_user
   ```
 * Create a python class that inherits CmdsProvider
+
   ```python
   class MyCmd(CmdsProvider):
       [...]
   ```
 * Write one or more methods that represent commands that will be called. To
   respond to a user they can use the reply_to_user function:
+
   ```python
       def my_cmd(self, command, data):
           [...]
@@ -101,6 +103,7 @@ Currently the process is a little clunky but should not be hugely difficult.
   ```
 * In the __init__ method store a dictionary to map commands to trigger your
   method:
+
   ```python
       def __init__(self):
           self.cmds = {
@@ -143,10 +146,10 @@ class StatusCmd(CmdsProvider):
 ```
 the StatusCmd.cmd_getallstatus method will be called in response to (amongst
 many similar alternatives):
-* <botname>: statusforall
-* <botname>: status for all
-* <botname>: what's everyone doing?
-* <botname>: w hats every body'd oing!
+* botname: statusforall
+* botname: status for all
+* botname: what's everyone doing?
+* botname: w hats every body'd oing!
 
 All this also works on the assumption that the command name is effectively the
 text between the colon after the nickname of the bot and either the end of the
