@@ -16,24 +16,29 @@ known_servers = [normal_server,
                  ]
 
 
-class DictCmds(CmdsProvider):
-    def __init__(self):
-        self.dbs = {}
-        if got_dictclient:
-            for s in known_servers:
-                try:
-                    c = dictclient.Connection(s)
-                    sdbs = c.getdbdescs()
-                    for db, desc in sdbs.items():
-                        if db not in self.dbs:
-                            self.dbs[db] = {
-                                'server': s,
-                                'description': desc,
-                            }
-                except:
-                    print("%(server)s is invalid or unavailable"
-                          % {'server': s})
+def setupdictdbs():
+    dbs = {}
+    if got_dictclient:
+        for s in known_servers:
+            try:
+                c = dictclient.Connection(s)
+                sdbs = c.getdbdescs()
+                for db, desc in sdbs.items():
+                    if db not in dbs:
+                        dbs[db] = {
+                            'server': s,
+                            'description': desc,
+                        }
+            except:
+                print("%(server)s is invalid or unavailable"
+                      % {'server': s})
+    return dbs
 
+
+class DictCmds(CmdsProvider):
+    dbs = setupdictdbs()
+
+    def __init__(self):
         get_def = {'function':  self.cmd_definition,
                    'description': "get a dictionary definition",
                    'aliases': ['dictionary', 'definition', ],
@@ -89,3 +94,5 @@ class DictCmds(CmdsProvider):
         if len(response) > MAX_DEF_LENGTH:
             response = response[:MAX_DEF_LENGTH] + '[...]'
         return response
+
+del setupdictdbs
