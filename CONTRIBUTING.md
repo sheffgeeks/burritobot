@@ -7,7 +7,7 @@ entrust all those who attend with the ability to commit directly to the
 repository.
 
 To get started you will need a GitHub account (if you do not already have an
-account [signup here](https://github.com/signup/free).
+account [signup here](https://github.com/signup/free).)
 
 ## Installing in development mode
 
@@ -82,6 +82,7 @@ Currently the process is a little clunky but should not be hugely difficult.
 * Create a new file with your plugin code in the plugins directory
 * Your plugin at the moment is likely to be a "CmdsProvider" so you should be
   importing and the reply_to_user helper function:
+
   ```python
   from burrito.cmdsprovider import CmdsProvider
   from burrito.utils import reply_to_user
