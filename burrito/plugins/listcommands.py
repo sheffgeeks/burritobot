@@ -6,6 +6,7 @@ from burrito.utils import reply_to_user
 class HelpCommands(CmdsProvider):
     def __init__(self):
         self.cmds = {'commands': {'function': self.cmd_list,
+                                  'aliases': ['comms', ],
                                   'description': None},
                      'help': {'function': self.cmd_help_cmd,
                               'description': 'get help for a cmd',

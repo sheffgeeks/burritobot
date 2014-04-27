@@ -18,13 +18,12 @@ class LocatorCmds(CmdsProvider):
                    'args': ['nick']}
         whereiseveryone = {
             'function': self.cmd_whereiseveryone,
-            'description': "reports all known last locations"}
+            'description': "reports all known last locations",
+            'aliases': ['whereiseverybody', 'whereseveryone',
+                        'whereseverybody'],
+        }
         self.cmds = {'whereis': whereis,
-                     'where is': whereis,
                      'whereiseveryone': whereiseveryone,
-                     'where is everyone': whereiseveryone,
-                     'whereiseverybody': whereiseveryone,
-                     'where is everybody': whereiseveryone,
                      }
 
     def cmd_whereiseveryone(self, command, data):

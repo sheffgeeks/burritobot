@@ -35,20 +35,20 @@ class DictCmds(CmdsProvider):
                           % {'server': s})
 
         get_def = {'function':  self.cmd_definition,
-                   'description': "get a definition",
+                   'description': "get a dictionary definition",
+                   'aliases': ['dictionary', 'definition', ],
                    'args': ['nick']}
         get_lst = {'function':  self.cmd_dblist,
-                   'description': "get a list of dbs",
+                   'description': "get a list of dictionary databases",
+                   'aliases': ['listdict', ],
                    'args': ['nick']}
-        self.cmds = {'dictionary': get_def,
-                     'define': get_def,
-                     'dict_list': get_lst,
+        self.cmds = {'define': get_def,
                      'dictlist': get_lst,
-                     'list_dict': get_lst,
-                     'listdict': get_lst,
                      }
 
-        self.cmds.update([(k, get_def) for k in self.dbs.keys()])
+        get_def2 = {'nolist': True}
+        get_def2.update(get_def)
+        self.cmds.update([(k, get_def2) for k in self.dbs.keys()])
         self.translate_dbs = [k for k in self.dbs.keys() if '-' in k]
         self.other_dbs = [k for k in self.dbs.keys() if '-' not in k]
 
