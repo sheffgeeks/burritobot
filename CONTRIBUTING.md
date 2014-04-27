@@ -114,9 +114,12 @@ Currently the process is a little clunky but should not be hugely difficult.
               }
           }
   ```
-  Note that if there is no description, or there is a 'nolist' defined for the
-  command - the commands plugin will not currently list the command.
-  See also [default command handling notes](#command-name-notes))
+  * Note that if there is no description, or there is a 'nolist' defined for
+    the command, the commands plugin will not currently list the command.
+    See also [default command handling notes](#command-name-notes))
+  * Also note that excessive work should be avoided in the __init__ method as,
+    for the moment at least, new plugin objects are created for each message
+    that is processed.
 * Finally in the __init__.py file in the plugins directory, add the name of
   the new module to the __all__ list.
 
