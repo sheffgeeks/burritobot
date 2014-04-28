@@ -66,7 +66,7 @@ To run:
 burritobot --irc-channels burritobottest --irc-nick myburritonick --debug
 ```
 
-The above will connect as mynick on freenode, and will join #burritotest. You
+The above will connect as myburritonick on freenode, and will join #burritotest. You
 may prefer to join a different channel if you wish to keep your changes a
 surprise. You will almost certainly need to choose a unique nickname for the
 bot to avoid naming conflicts.
