@@ -2,6 +2,7 @@ import argparse
 import configparser
 import logging
 import os
+import sys
 import time
 
 from burrito.commsprovider import CommsProvider
@@ -69,7 +70,14 @@ def run():
 
     while True:
         for comms in comms_providers:
-            comms.run_once()
+            try:
+                comms.run_once()
+            except KeyboardInterrupt:
+                sys.exit(0)
+            except SystemExit:
+                sys.exit(0)
+            except Exception:
+                logging.exception('Exception not handled by plugin:')
         time.sleep(0.05)
 
 if __name__ == "__main__":
