@@ -7,19 +7,18 @@ import xmlrpc.client
 class Pip(CmdsProvider):
 
     def __init__(self):
-        self.cmds = {
-              'pip': {
-                  'function': self.get_package,
-                  'description': "Get pip package",
-                  'aliases': ['pypi', ],
-              }
-        }
+        self.cmds = {'pip':
+                         {'function': self.get_package,
+                          'description': "Get pip package",
+                          'aliases': ['pypi', ]
+                         }
+                    }
 
         self.xml_rpc = xmlrpc.client.ServerProxy("http://pypi.python.org/pypi")
 
     def get_package(self, command, data):
         """Return the package version and url, or alternatives if not found"""
-        args = " ".join(command.split(":")[1:])
+        args = " ".join(command.split(":")[1:]).strip()
         response = self.xml_rpc.search({"name": args})
 
         alts = []
