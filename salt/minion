@@ -1,0 +1,5 @@
+master: localhost
+file_client: local
+#pillar_roots:
+#  base:
+#    - /srv/pillar

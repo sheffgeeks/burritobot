@@ -1,0 +1,2 @@
+irc==8.5.4
+-e git+https://github.com/garym/dictclient.git#egg=dictclient
