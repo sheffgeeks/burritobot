@@ -22,14 +22,14 @@ def do_command(command, target, source_user, conn_obj, connection,
     torun = None
     for cmd in cmds:
         try:
-            f, data = cmd.match_command(command, conn_obj, data)
+            f, c, data = cmd.match_command(command, conn_obj, data)
             if torun is None:
                 torun = f
         except Exception:
             logging.error(traceback.format_exc())
 
     # only run the one function if spoken to
-    responses = torun(command, data) if to_me and torun is not None else []
+    responses = torun(c, data) if to_me and torun is not None else []
     for i, resp in enumerate(responses):
         sleep(0.1 * i)
         connection.privmsg(target, resp)
