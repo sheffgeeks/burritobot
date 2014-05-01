@@ -24,11 +24,14 @@ class DateCmds(CmdsProvider):
                      for cmd, v in self.formats.items()}
 
     def cmd_date(self, command, data):
-        lcmd = command.lower()
+        splitcmd = command.split(':')
+        lcmd, argstr = splitcmd[0].lower(), ':'.join(splitcmd[1:])
         dt = datetime.now()
         fmt = self.formats.get(lcmd, {}).get('format')
         if fmt:
-            output = dt.strftime(fmt)
+            argoutput = dt.strftime(argstr) if argstr else ''
+            output = (dt.strftime(fmt) if argoutput.strip() == argstr.strip()
+                      else argoutput)
         elif lcmd == 'isotime':
             output = dt.time().isoformat()
         elif lcmd == 'isodate':
