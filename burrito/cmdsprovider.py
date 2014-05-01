@@ -47,7 +47,7 @@ class CmdsProvider(metaclass=PluginMount):
                                      self.cmdmap.get(tcmd))
 
         fn = self.cmds[thecmd]['function'] if thecmd else None
-        return fn, data
+        return fn, tcmd, data
 
     def list_commands(self):
         """Return list of commands
