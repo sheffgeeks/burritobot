@@ -35,19 +35,15 @@ class CmdsProvider(metaclass=PluginMount):
     def match_command(self, command, conn_obj, data):
         """Match commands
         """
-        lcmd = command.split(':')[0].lower()
+        splitcmd = command.split(':')
+        lcmd = splitcmd[0].lower()
         tcmd = lcmd.translate({c: '' for c in b"'?!; "})
 
-        try:
-            thecmd = self.cmdmap.get(lcmd,
-                                     self.cmdmap.get(tcmd))
-        except AttributeError:
-            self._generate_alias_commands()
-            thecmd = self.cmdmap.get(lcmd,
-                                     self.cmdmap.get(tcmd))
+        self._generate_alias_commands()
+        thecmd = self.cmdmap.get(lcmd, self.cmdmap.get(tcmd))
 
         fn = self.cmds[thecmd]['function'] if thecmd else None
-        return fn, tcmd, data
+        return fn, ':'.join([thecmd] + splitcmd[1:]), data
 
     def list_commands(self):
         """Return list of commands
