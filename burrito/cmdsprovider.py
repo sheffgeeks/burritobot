@@ -42,8 +42,10 @@ class CmdsProvider(metaclass=PluginMount):
         self._generate_alias_commands()
         thecmd = self.cmdmap.get(lcmd, self.cmdmap.get(tcmd))
 
-        fn = self.cmds[thecmd]['function'] if thecmd else None
-        return fn, ':'.join([thecmd] + splitcmd[1:]), data
+        (fn, modcmd) = (
+            self.cmds[thecmd]['function'],
+            ':'.join([thecmd] + splitcmd[1:])) if thecmd else (None, None)
+        return fn, modcmd, data
 
     def list_commands(self):
         """Return list of commands

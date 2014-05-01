@@ -69,12 +69,12 @@ class IRCCommands(CmdsProvider):
 
     def match_command(self, command, conn_obj, data):
         if isinstance(conn_obj, IRCBot):
-            cmd, data = super(IRCCommands,
-                              self).match_command(command, conn_obj, data)
+            fn, cmd, data = super(
+                IRCCommands, self).match_command(command, conn_obj, data)
             data['conn'] = conn_obj
         else:
-            cmd = None
-        return cmd, data
+            fn, cmd = None, None
+        return fn, cmd, data
 
     def cmd_die(self, command, data):
         data['conn'].connection.notice(data['source_user'], "quitting")
