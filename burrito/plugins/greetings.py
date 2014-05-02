@@ -4,6 +4,8 @@ import random
 
 
 class Greetings(CmdsProvider):
+    respond_to_public = True
+
     local_data = {
         'cmds': ['hi', 'watcha', 'hello', 'oh, hai', ],
         'replies': ['hi', 'watcha', 'hello', 'oh, hai', ],

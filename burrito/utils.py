@@ -23,13 +23,16 @@ def do_command(command, target, source_user, conn_obj, connection,
     for cmd in cmds:
         try:
             f, c, data = cmd.match_command(command, conn_obj, data)
-            if torun is None:
-                torun, thecmd = f, c
         except Exception:
             logging.error(traceback.format_exc())
+        else:
+            respond_to_public = getattr(cmd, "respond_to_public", False)
 
-    # only run the one function if spoken to
-    responses = torun(thecmd, data) if to_me and torun is not None else []
+            # will only run function if spoken to or respond_to_public is True
+            if (torun is None) and (to_me or respond_to_public):
+                torun, thecmd = f, c
+
+    responses = torun(thecmd, data) if torun is not None else []
     for i, resp in enumerate(responses):
         sleep(0.1 * i)
         connection.privmsg(target, resp)
