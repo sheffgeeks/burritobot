@@ -1,5 +1,6 @@
 import argparse
 import configparser
+import locale
 import logging
 import os
 import sys
@@ -38,6 +39,8 @@ def run():
                               const=level.upper(), default='INFO',
                               dest='loglevel',
                               help='sets logging level to %s' % level.upper())
+    parser.add_argument('--locale', action='store', default='en_GB.UTF-8',
+                        help='sets the locale')
 
     comms_providers = CommsProvider.get_plugins()
 
@@ -64,6 +67,16 @@ def run():
     loglevel = getattr(logging, args.loglevel.upper())
     logging.basicConfig(level=loglevel if isinstance(loglevel, int)
                         else logging.INFO)
+
+    # apparently the locale.setlocale method is not threadsafe
+    # so please be careful
+    try:
+        locale.setlocale(locale.LC_ALL, args.locale)
+        logging.debug('locale (LC_ALL) set to %s', args.locale)
+    except locale.Error:
+        # assume that this means you want the local
+        locale.setlocale(locale.LC_ALL, '')
+        logging.debug('locale (LC_ALL) set to environment default')
 
     for comms in comms_providers:
         comms.setup(args)
