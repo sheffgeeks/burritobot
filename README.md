@@ -59,3 +59,9 @@ To discover further options, run
 ```sh
 burritobot --help
 ```
+
+
+### JavaScript eval
+
+To enable the `js` plugin, you need to install [node.js](http://nodejs.org)
+and `cd scripts/sandbox-cli`, `npm install`.
