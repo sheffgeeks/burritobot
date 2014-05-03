@@ -46,6 +46,7 @@ repeatables = (
 
 class RepeatAfterTwo(CmdsProvider):
     respond_to_public = True
+    cmds = {}
 
     def pre_process(self, command, conn_obj, data):
         # only need to keep track of the last two commands
