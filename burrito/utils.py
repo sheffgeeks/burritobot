@@ -12,7 +12,8 @@ def do_command(command, target, source_user, conn_obj, connection,
     cmds = CmdsProvider.get_plugins()
     data = {'source_user': source_user,
             'target': target,
-            'cmd': command.lower()
+            'cmd': command.lower(),
+            'to_me': to_me
             }
 
     for cmd in cmds:
