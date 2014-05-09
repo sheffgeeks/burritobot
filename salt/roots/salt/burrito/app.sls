@@ -1,5 +1,6 @@
 include:
   - git
+  - node
   - python3
   - python3.virtualenv
 
@@ -27,3 +28,10 @@ install burritobot:
     - source: salt://burrito/burritobot.ini
     - template: jinja
     - mode: 644
+
+npm install:
+  cmd.run:
+    - cwd: /vagrant/scripts/sandbox-cli
+    - user: vagrant
+    - require:
+      - cmd: n stable

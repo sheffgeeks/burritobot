@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from itertools import chain
 import logging
 import re
 
@@ -17,9 +18,11 @@ class IRCBot(SingleServerIRCBot):
     def __init__(self, server_list, nickname, realname,
                  reconnection_interval=60, channels=None,
                  **connect_params):
-        clist = ([] if channels is None else
-                 [channels, ] if isinstance(channels, str)
-                 else channels)
+        chlist = ([] if channels is None else
+                  [channels] if isinstance(channels, str)
+                  else channels)
+        clist = chain.from_iterable([c.split(',') for c in chlist])
+
         self.chan_list = [c if c.startswith('#') else '#' + c for c in clist]
         super(IRCBot, self).__init__(server_list, nickname, realname,
                                      reconnection_interval, **connect_params)
