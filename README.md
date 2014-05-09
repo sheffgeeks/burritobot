@@ -65,3 +65,11 @@ burritobot --help
 
 To enable the `js` plugin, you need to install [node.js](http://nodejs.org)
 and `cd scripts/sandbox-cli`, `npm install`.
+
+### Scheme eval
+
+To enable the `scheme` plugin:
+
+- sudo apt-get install chicken-bin
+- chicken-install -sudo sandbox
+- csc scripts/scheme-sandbox/sandboxed.scm
