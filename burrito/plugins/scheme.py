@@ -55,6 +55,6 @@ class Scheme(CmdsProvider):
             return reply_to_user(data, 'Subprocess error', e)
 
         if errs:
-            return reply_to_user(data, self.truncate_output(errs, 200, 5))
+            return reply_to_user(data, self.truncate_output(errs, 200, 1))
         else:
             return reply_to_user(data, self.truncate_output(outs, 200, 5))
