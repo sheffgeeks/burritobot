@@ -35,3 +35,23 @@ npm install:
     - user: vagrant
     - require:
       - cmd: n stable
+
+chicken-bin:
+  pkg:
+    - installed
+
+chicken-sandbox-install:
+  cmd.run:
+    - name: chicken-install -sudo sandbox
+    - cwd: /vagrant
+    - user: vagrant
+    - require:
+      - pkg: chicken-bin
+
+csc-sandboxed:
+  cmd.run:
+    - name: csc scripts/scheme-sandbox/sandboxed.scm
+    - cwd: /vagrant
+    - user: vagrant
+    - require:
+      - cmd: chicken-sandbox-install
