@@ -35,3 +35,4 @@ nosetests.xml
 .pydevproject
 
 /scripts/sandbox-cli/node_modules
+/scripts/scheme-sandbox/sandboxed
