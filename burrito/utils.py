@@ -6,6 +6,22 @@ from time import sleep
 
 from burrito.cmdsprovider import CmdsProvider
 
+SECONDS = 1
+MINUTES = 60
+HOURS = MINUTES * 60
+DAYS = HOURS * 24
+WEEKS = DAYS * 7
+MONTHS = DAYS * 365.25 / 12
+YEARS = DAYS * 365.25
+TIMETHRESHOLDS = [(SECONDS, 15 * SECONDS, "seconds"),
+                  (MINUTES, 2 * MINUTES, "minutes"),
+                  (HOURS, 2 * HOURS, "hours"),
+                  (DAYS, 2 * DAYS, "days"),
+                  (WEEKS, 2 * WEEKS, "weeks"),
+                  (MONTHS, 2 * MONTHS, "months"),
+                  (YEARS, 2 * YEARS, "years"),
+                  ]
+
 
 def do_command(command, target, source_user, conn_obj, connection,
                to_me=False):
@@ -79,14 +95,13 @@ def get_command_argstring(command, sep=':'):
 
 
 def prettier_date(ts):
-    timeago = datetime.now() - ts
-    if timeago.days > 1:
-        return '%d days ago' % timeago.days
-    elif timeago.seconds > 7200:
-        return '%d hours ago' % int(timeago.seconds / 3600)
-    elif timeago.seconds > 120:
-        return '%d minutes ago' % int(timeago.seconds / 60)
-    elif timeago.seconds == 1:
-        return '1 second ago'
+    timeago = (datetime.now() - ts).total_seconds()
+
+    times = [{'time': int(timeago / interval), 'label': label}
+             for (interval, threshold, label) in TIMETHRESHOLDS
+             if timeago > threshold]
+
+    if times:
+        return '%(time)d %(label)s ago' % times[-1]
     else:
-        return '%d seconds ago' % timeago.seconds
+        return 'just now'

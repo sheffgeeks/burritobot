@@ -51,9 +51,6 @@ class LocatorCmds(CmdsProvider):
         splitcmd = [a.strip() for a in command.split(':')]
         who = splitcmd[1]
         reply = []
-        if who == data['source_user']:
-            reply.append("Don't you know where you are?")
-
         try:
             loc_data = shelve.open(self.loc_file)
             if who not in loc_data:
@@ -62,7 +59,9 @@ class LocatorCmds(CmdsProvider):
                 replystr = "Who knows?"
             else:
                 replyfmtstr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
-                replydict = {'who': who}
+                replydict = {}
+                replydict['who'] = ('you' if who == data['source_user']
+                                    else who)
                 replydict.update(loc_data[who][-1])
                 replydict['whenstr'] = prettier_date(replydict['when'])
                 replystr = replyfmtstr % replydict
