@@ -3,6 +3,7 @@
 var Sandbox = require('sandbox');
 
 Sandbox.options.timeout = 2000;
+Sandbox.options.api = 'api';
 
 var s = new Sandbox();
 

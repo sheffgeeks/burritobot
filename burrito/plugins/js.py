@@ -15,22 +15,28 @@ class JS(CmdsProvider):
         }
         dirname = os.path.abspath(os.path.dirname(__file__))
         self.bin = os.path.join(
-            dirname, '../../scripts/sandbox-cli/sandboxed.js'
+            dirname, '../../scripts/js-sandbox/sandboxed.js'
         )
+        self.cwd = os.path.dirname(self.bin)
 
     def cmd_eval(self, command, data):
         splitcmd = [a.strip() for a in command.split(':')]
         command = splitcmd[0]
         code = splitcmd[1]
+        output = self.actual_eval(code)
+        return reply_to_user(data, output)
+
+    def actual_eval(self, js):
         proc = Popen(
             [self.bin],
+            cwd=self.cwd,
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
             shell=False
         )
         try:
-            outs, errs = proc.communicate(input=code.encode('UTF-8'))
+            outs, errs = proc.communicate(input=js.encode('UTF-8'))
         except OSError as e:
             proc.kill()
             return reply_to_user(data, 'Subprocess error', e)
@@ -42,4 +48,9 @@ class JS(CmdsProvider):
         if len(logs) > 5:
             output.append('<... console output truncated ...>')
         output.append(result)
-        return reply_to_user(data, output)
+        return output
+
+if __name__ == '__main__':
+    cmd = JS()
+    import sys
+    print("\n".join(cmd.actual_eval(sys.stdin.read())))
