@@ -36,3 +36,4 @@ nosetests.xml
 
 /scripts/js-sandbox/node_modules
 /scripts/scheme-sandbox/sandboxed
+.vagrant/

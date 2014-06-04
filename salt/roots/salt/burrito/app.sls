@@ -22,6 +22,10 @@ install burritobot:
     - require:
       - virtualenv: /home/vagrant/burritoenv
 
+/etc/burritobot:
+  file.directory:
+    - mode: 755
+
 /etc/burritobot/burritobot.ini:
   file:
     - managed

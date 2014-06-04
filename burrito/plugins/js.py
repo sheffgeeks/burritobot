@@ -1,7 +1,8 @@
 from burrito.cmdsprovider import CmdsProvider
 from burrito.utils import reply_to_user
-from subprocess import PIPE, Popen, CalledProcessError
+from subprocess import PIPE, STDOUT, Popen, CalledProcessError
 import os
+import logging
 
 
 class JS(CmdsProvider):
@@ -27,12 +28,13 @@ class JS(CmdsProvider):
         return reply_to_user(data, output)
 
     def actual_eval(self, js):
+        logging.debug("Running `%s` in %s" % (self.bin, self.cwd))
         proc = Popen(
             [self.bin],
             cwd=self.cwd,
             stdin=PIPE,
             stdout=PIPE,
-            stderr=PIPE,
+            stderr=STDOUT,
             shell=False
         )
         try:

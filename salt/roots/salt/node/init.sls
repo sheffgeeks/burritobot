@@ -9,7 +9,7 @@ curl:
   pkg:
     - installed
 
-n latest:
+n stable:
   cmd.run:
     - user: root
     - require:
