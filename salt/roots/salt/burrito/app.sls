@@ -31,7 +31,7 @@ install burritobot:
 
 npm install:
   cmd.run:
-    - cwd: /vagrant/scripts/sandbox-cli
+    - cwd: /vagrant/scripts/js-sandbox
     - user: vagrant
     - require:
       - cmd: n stable
