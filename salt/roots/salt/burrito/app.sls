@@ -4,11 +4,11 @@ include:
   - python3
   - python3.virtualenv
 
-/home/vagrant/burritoenv:
+{{ pillar['installdir'] }}/burritoenv:
   virtualenv.managed:
-    - requirements: /vagrant/requirements.txt
+    - requirements: {{ pillar['installdir'] }}/requirements.txt
     - python: /usr/bin/python3
-    - runas: vagrant
+    - runas: {{ pillar['user'] }}
     - require:
       - pkg: python3
       - pkg: python-virtualenv
@@ -16,11 +16,11 @@ include:
 
 install burritobot:
   cmd.run:
-    - cwd: /vagrant
-    - user: vagrant
-    - name: "/home/vagrant/burritoenv/bin/python setup.py develop"
+    - cwd: {{ pillar['installdir'] }}
+    - user: {{ pillar['user'] }}
+    - name: "{{ pillar['installdir'] }}/burritoenv/bin/python setup.py develop"
     - require:
-      - virtualenv: /home/vagrant/burritoenv
+      - virtualenv: {{ pillar['installdir'] }}/burritoenv
 
 /etc/burritobot:
   file.directory:
@@ -35,8 +35,8 @@ install burritobot:
 
 npm install:
   cmd.run:
-    - cwd: /vagrant/scripts/js-sandbox
-    - user: vagrant
+    - cwd: {{ pillar['installdir'] }}/scripts/js-sandbox
+    - user: {{ pillar['user'] }}
     - require:
       - cmd: n stable
 
@@ -47,15 +47,15 @@ chicken-bin:
 chicken-sandbox-install:
   cmd.run:
     - name: chicken-install -sudo sandbox
-    - cwd: /vagrant
-    - user: vagrant
+    - cwd: {{ pillar['installdir'] }}
+    - user: {{ pillar['user'] }}
     - require:
       - pkg: chicken-bin
 
 csc-sandboxed:
   cmd.run:
     - name: csc scripts/scheme-sandbox/sandboxed.scm
-    - cwd: /vagrant
-    - user: vagrant
+    - cwd: {{ pillar['installdir'] }}
+    - user: {{ pillar['user'] }}
     - require:
       - cmd: chicken-sandbox-install
