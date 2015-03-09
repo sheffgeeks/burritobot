@@ -1,14 +1,11 @@
 import argparse
 import configparser
-import locale
+import itertools
+import logging.config
 import logging
 import os
-import sys
-import time
 
-from burrito.commsprovider import CommsProvider
-from burrito.plugins import *
-
+import irc3
 
 def readConfig(filename=None, defsection='main', defaults=None):
     if defaults is None:
@@ -26,6 +23,12 @@ def readConfig(filename=None, defsection='main', defaults=None):
         config.add_section(defsection)
     return config
 
+def get_channel_list(channels=None):
+    chanlist = ([] if channels is None else
+                [channels] if isinstance(channels, str)
+                else channels)
+    clist = itertools.chain.from_iterable([c.split(',') for c in chanlist])
+    return [c if c.startswith('#') else '#' + c for c in clist]
 
 def run():
     parser = argparse.ArgumentParser(description='An irc bot')
@@ -39,10 +42,20 @@ def run():
                               const=level.upper(), default='INFO',
                               dest='loglevel',
                               help='sets logging level to %s' % level.upper())
-    parser.add_argument('--locale', action='store', default='en_GB.UTF-8',
-                        help='sets the locale')
 
-    comms_providers = CommsProvider.get_plugins()
+    parser.add_argument('--irc-server', metavar='SERVER[:PORT]',
+                        help='set the irc server and port')
+    parser.add_argument('--irc-nick', action='store',
+                        help= 'set the nick for the bot')
+    parser.add_argument('--irc-channels', action='store', nargs='+',
+                        help= 'sets default channels to join')
+    parser.add_argument('--irc-realname', action='store', default="BurritoBot",
+                        help= 'sets the realname of the bot')
+    parser.add_argument('--irc-userinfo', action='store',
+                        default="BurritoBot, built on irc3",
+                        help= 'sets user info for the bot')
+
+    comms_providers = []
 
     allargs = [comms.argparse_args() for comms in comms_providers]
     defaults = {}
@@ -68,30 +81,34 @@ def run():
     logging.basicConfig(level=loglevel if isinstance(loglevel, int)
                         else logging.INFO)
 
-    # apparently the locale.setlocale method is not threadsafe
-    # so please be careful
-    try:
-        locale.setlocale(locale.LC_ALL, args.locale)
-        logging.debug('locale (LC_ALL) set to %s', args.locale)
-    except locale.Error:
-        # assume that this means you want the local
-        locale.setlocale(locale.LC_ALL, '')
-        logging.debug('locale (LC_ALL) set to environment default')
+    logging.config.dictConfig(irc3.config.LOGGING)
 
-    for comms in comms_providers:
-        comms.setup(args)
+    nick = args.irc_nick
+    realname = args.irc_realname
+    userinfo = args.irc_userinfo
+    channels = get_channel_list(args.irc_channels)
+    server, port = args.irc_server.split(':')
 
-    while True:
-        for comms in comms_providers:
-            try:
-                comms.run_once()
-            except KeyboardInterrupt:
-                sys.exit(0)
-            except SystemExit:
-                sys.exit(0)
-            except Exception:
-                logging.exception('Exception not handled by plugin:')
-        time.sleep(0.05)
+    irc3.IrcBot(
+        cmd=nick + ': ',
+        nick=nick, autojoins=channels,
+        realname=realname,
+        userinfo=userinfo,
+        host=server, port=int(port), ssl=False,
+        includes=[
+            'irc3.plugins.core',
+            'irc3.plugins.command',
+            'irc3.plugins.storage',
+            'burrito.plugins.dates',
+            'burrito.plugins.dictionary',
+            'burrito.plugins.greetings',
+            'burrito.plugins.js',
+            'burrito.plugins.locator',
+            'burrito.plugins.pip',
+            'burrito.plugins.repeats',
+            'burrito.plugins.scheme',
+        ],
+        storage='redis://localhost:6379/10').run()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()

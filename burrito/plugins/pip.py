@@ -1,45 +1,51 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user
+from irc3.plugins.command import command
+import irc3
 
 import xmlrpc.client
 import string
 
 
-class Pip(CmdsProvider):
+@irc3.plugin
+class Pip(object):
 
-    def __init__(self):
-        self.cmds = {'pip': {'function': self.get_package,
-                             'description': "Get python package information from PyPI",
-                             'aliases': ['pypi', ]}}
-
+    def __init__(self, bot):
+        self.bot = bot
         self.xml_rpc = xmlrpc.client.ServerProxy("http://pypi.python.org/pypi")
 
-    def get_package(self, command, data):
-        """Return the package version and url, or alternatives if not found"""
-        args = " ".join(command.split(":")[1:]).strip()
+    @command(permission='view', name='pip')
+    def pip(self, mask, target, args):
+        """Return the package version and url, or alternatives if not found
 
-        # Allowed chars from http://legacy.python.org/dev/peps/pep-0426/#name
+            %%pip <package>
+        """
+        reply = self.get_package(mask, target, args)
+        if target.is_channel:
+            return "{user}: {reply}".format(user=mask.nick, reply=reply)
+        return reply
+
+    def get_package(self, mask, target, args):
+        package = args.get('<package>')
+
         allowed_chars = string.ascii_letters + string.digits + "_-."
-        for char in args:
+        for char in package:
             if char not in allowed_chars:
-                reply = 'Invalid name: Cannot contain "{}"'.format(char)
-                return reply_to_user(data, reply)
+                return 'Invalid name: Cannot contain "{}"'.format(char)
 
-        response = self.xml_rpc.search({"name": args})
+        self.bot.log.info('searching for package {}'.format(package))
+        response = self.xml_rpc.search({"name": package})
 
         alts = []
         for item in response:
-            if item["name"].lower() == args.lower():
+            if item["name"].lower() == package.lower():
                 wanted_data = item
                 break
-            elif args.lower() in item["name"].lower():
+            elif package.lower() in item["name"].lower():
                 alts.append(item["name"])
         else:
             if alts:
-                reply = "Package {} not found. Alternatives: {}".format(args, " ".join(alts[:10]))
-                return reply_to_user(data, reply)
+                return "Package {} not found. Alternatives: {}".format(package, " ".join(alts[:10]))
             else:
-                return reply_to_user(data, "Package {} not found".format(args))
+                return "Package {} not found".format(package)
 
         response = self.xml_rpc.release_data(wanted_data["name"], wanted_data["version"])
 
@@ -48,4 +54,4 @@ class Pip(CmdsProvider):
                                       response["summary"],
                                       response["home_page"])
 
-        return reply_to_user(data, reply)
+        return reply

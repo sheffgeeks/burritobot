@@ -1,5 +1,6 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user
+from functools import partial
+from irc3.plugins.command import command
+import irc3
 
 try:
     import dictclient
@@ -9,53 +10,60 @@ except:
 
 MAX_DEF_LENGTH = 1000
 MAX_DEFS = 1
+MAX_LINELEN = 160
+MAX_LINES_PER_PUBLIC_DEF = 4
 normal_server = 'dict.org'
-known_servers = [normal_server,
-                 'www.lojban.org',
-                 'dict.saugus.net',
-                 ]
+known_servers = [
+    normal_server,
+    'www.lojban.org',
+    'dict.saugus.net',
+]
 
 
 def setupdictdbs():
+    if not got_dictclient:
+        return {}
     dbs = {}
-    if got_dictclient:
-        for s in known_servers:
-            try:
-                c = dictclient.Connection(s)
-                sdbs = c.getdbdescs()
-                for db, desc in sdbs.items():
-                    if db not in dbs:
-                        dbs[db] = {
-                            'server': s,
-                            'description': desc,
-                        }
-            except:
-                print("%(server)s is invalid or unavailable"
-                      % {'server': s})
+    for s in known_servers:
+        try:
+            c = dictclient.Connection(s)
+            sdbs = c.getdbdescs()
+            for db, desc in sdbs.items():
+                if db not in dbs:
+                    dbs[db] = {
+                        'server': s,
+                        'description': desc,
+                    }
+        except:
+            print("%(server)s is invalid or unavailable"
+                  % {'server': s})
     return dbs
 
-
-class DictCmds(CmdsProvider):
+@irc3.plugin
+class DictCmds(object):
     dbs = setupdictdbs()
 
-    def __init__(self):
-        get_def = {'function':  self.cmd_definition,
-                   'description': "get a dictionary definition",
-                   'aliases': ['dictionary', 'definition', ],
-                   'args': ['nick']}
-        get_lst = {'function':  self.cmd_dblist,
-                   'description': "get a list of dictionary databases",
-                   'aliases': ['listdict', ],
-                   'args': ['nick']}
-        self.cmds = {'define': get_def,
-                     'dictlist': get_lst,
-                     }
-
-        get_def2 = {'nolist': True}
-        get_def2.update(get_def)
-        self.cmds.update([(k, get_def2) for k in self.dbs.keys()])
+    def __init__(self, bot):
+        self.bot = bot
         self.translate_dbs = [k for k in self.dbs.keys() if '-' in k]
         self.other_dbs = [k for k in self.dbs.keys() if '-' not in k]
+
+    @command(permission='view')
+    def listdict(self, mask, target, args):
+        """List Dictionarys
+
+            %%listdict [<type>]
+        """
+        if args['<type>'] in ('trans', 'translate'):
+            dbs = self.translate_dbs
+        elif args['<type>'] in ('other', 'normal'):
+            dbs = self.other_dbs
+        else:
+            dbs = self.other_dbs + self.translate_dbs
+        dicts = ', '.join(sorted(dbs))
+        lines = irc3.utils.split_message('Dictionarys: ' + dicts, 160)
+        for line in lines:
+            yield line
 
     def cmd_dblist(self, command, data):
         splitcmd = [a.strip() for a in command.split(':')]
@@ -68,31 +76,65 @@ class DictCmds(CmdsProvider):
             reply.append(str(self.other_dbs + self.translate_dbs))
         return reply_to_user(data, reply)
 
-    def cmd_definition(self, command, data):
-        splitcmd = [a.strip() for a in command.split(':')]
-        command = splitcmd[0]
-        defterm = splitcmd[1]
-        reply = []
-        if command in self.dbs:
-            db = command
-            server = self.dbs[command].get('server', None)
-        else:
+    @command(permission='view')
+    def define(self, mask, target, args):
+        """Definition
+
+            %%define <term>
+            %%define <dict> <term>
+        """
+        db = args['<dict>'] if '<dict>' in args else '*'
+        for d in self.db_definition(db, args['<term>']):
+            yield d
+
+    @command(permission='view', name="fulldefine", public=False)
+    def fulldefine(self, mask, target, args):
+        """Definition
+
+            %%fulldefine <term>
+            %%fulldefine <dict> <term>
+        """
+        for d in self.db_definition(args['<dict>'], args['<term>'],
+                                    maxlines=0):
+            yield d
+
+    def db_definition(self, db, term, maxlines=3):
+        self.bot.log.info("{name}: defining {term}".format(
+            name=self.__class__.__name__, term=term))
+        if db in (None, '*'):
             db = '*'
             server = normal_server
+        elif db in self.dbs:
+            server = self.dbs[db].get('server', None)
+        else:
+            yield 'Requested dictionary not found'
+            return
 
+        linecount = 0
         if server is not None:
             c = dictclient.Connection(server)
-            definitions = c.define(db, defterm)
-            if not definitions:
-                reply.append('No definitions found in ' + command)
-            reply.extend(self.process_definition(d)
-                         for d in definitions[:MAX_DEFS])
-        return reply_to_user(data, reply)
+            definitions = c.define(db, term)
+            if definitions:
+                for defn in definitions[:MAX_DEFS]:
+                    parts = self.process_definition(defn)
+                    for part in parts:
+                        resplit = irc3.utils.split_message(part, MAX_LINELEN)
+                        for l in resplit:
+                            linecount += 1
+                            if maxlines and linecount > maxlines:
+                                yield "..."
+                                return
+                            yield l
+                        
+            else:
+                if db in self.dbs and 'description' in self.dbs[db]:
+                    dstr = self.dbs[db]['description']
+                else:
+                    dstr = db
+                yield 'No definitions found in {db}'.format(db=dstr)
 
     def process_definition(self, definition):
-        response = ' '.join(definition.defstr.splitlines())
-        if len(response) > MAX_DEF_LENGTH:
-            response = response[:MAX_DEF_LENGTH] + '[...]'
-        return response
+        subdefs = definition.defstr.split('\n\n')
+        return [' '.join(sd.splitlines()) for sd in subdefs]
 
 del setupdictdbs

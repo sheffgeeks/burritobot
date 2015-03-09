@@ -1,34 +1,34 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user
+from irc3.plugins.command import command
+import irc3
 from subprocess import PIPE, STDOUT, Popen, CalledProcessError
 import os
 import logging
 
 
-class JS(CmdsProvider):
+@irc3.plugin
+class JS(object):
 
-    def __init__(self):
-        self.cmds = {
-            'js': {
-                'function': self.cmd_eval,
-                'description': 'Run some JavaScript'
-            }
-        }
+    def __init__(self, bot):
+        self.bot = bot
         dirname = os.path.abspath(os.path.dirname(__file__))
         self.bin = os.path.join(
             dirname, '../../scripts/js-sandbox/sandboxed.js'
         )
         self.cwd = os.path.dirname(self.bin)
 
-    def cmd_eval(self, command, data):
-        splitcmd = [a.strip() for a in command.split(':')]
-        command = splitcmd[0]
-        code = splitcmd[1]
+    @command(permission='view', name='js')
+    def cmd_eval(self, mask, target, args):
+        """js: Run some javascript
+
+            %%js <code> ...
+        """
+        code = ' '.join(args['<code>'])
         output = self.actual_eval(code)
-        return reply_to_user(data, output)
+        for line in output:
+            yield line
 
     def actual_eval(self, js):
-        logging.debug("Running `%s` in %s" % (self.bin, self.cwd))
+        self.bot.log.info("JS: Running `%s` in %s" % (self.bin, self.cwd))
         proc = Popen(
             [self.bin],
             cwd=self.cwd,

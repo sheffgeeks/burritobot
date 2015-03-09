@@ -1,20 +1,23 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user
 import random
+import irc3
 
+@irc3.plugin
+class Greetings(object):
 
-class Greetings(CmdsProvider):
-    respond_to_public = True
+    def __init__(self, bot):
+        self.bot = bot
+        self.phrases = [
+            'hi', 'watcha', 'hello', 'oh hai',
+        ]
+        self.replies = ['{0}, %s'.format(p) for p in self.phrases]
+        self.myreplies = ['%s: {0}'.format(p) for p in self.phrases]
 
-    local_data = {
-        'cmds': ['hi', 'watcha', 'hello', 'oh, hai', ],
-        'replies': ['hi', 'watcha', 'hello', 'oh, hai', ],
-    }
+    @irc3.event(irc3.rfc.PRIVMSG)
+    def on_privmessage(self, mask=None, event=None, target=None, data=None):
+        if data in self.phrases:
+            self.bot.privmsg(target, random.choice(self.replies) % mask.nick)
 
-    def __init__(self):
-        self.cmds = {cmd: {'function': self.cmd_greet}
-                     for cmd in self.local_data['cmds']}
-
-    def cmd_greet(self, command, data):
-        return reply_to_user(data,
-                             random.choice(self.local_data['replies']))
+    @irc3.event(irc3.rfc.MY_PRIVMSG)
+    def on_myprivmessage(self, mask=None, event=None, target=None, data=None):
+        if data in self.phrases:
+            self.bot.privmsg(target, random.choice(self.myreplies) % mask.nick)

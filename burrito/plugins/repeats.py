@@ -1,6 +1,4 @@
-from burrito.cmdsprovider import CmdsProvider
-
-lastcmd = ['', '']
+import irc3
 
 repeatables = (
     ":-) :) :o) :] :3 :c) :> =] 8) =) :} :^) :っ) "
@@ -44,23 +42,21 @@ repeatables = (
     "<3 </3 ").split()
 
 
-class RepeatAfterTwo(CmdsProvider):
-    respond_to_public = True
-    cmds = {}
+@irc3.plugin
+class RepeatAfterTwo(object):
+    lastnick = None
+    lastmsg = None
+    def __init__(self, bot):
+        self.bot = bot
 
-    def pre_process(self, command, conn_obj, data):
-        # only need to keep track of the last two commands
-        lastcmd[0], lastcmd[1] = lastcmd[1], command
-        return command, data
-
-    def match_command(self, command, conn_obj, data):
-        last, this = lastcmd
-        if last == this and this in repeatables:
-            return self.cmd_repeat, command, data
-        return None, None, data
-
-    def cmd_repeat(self, command, data):
-        reply = lastcmd[:1]
-        # clear the latest data to avoid a premature repeated match
-        lastcmd[1] = ''
-        return reply
+    @irc3.event(irc3.rfc.PRIVMSG)
+    def process(self, mask=None, event=None, target=None, data=None):
+        if mask.nick == self.bot.nick or mask.nick == self.lastnick:
+            self.lastmsg, self.lastnick = None, None
+        elif data not in repeatables:
+            self.lastmsg, self.lastnick = None, None
+        elif data == self.lastmsg:
+            self.bot.privmsg(target, data)
+            self.lastmsg, self.lastnick = None, None
+        else:
+            self.lastmsg, self.lastnick = data, mask.nick

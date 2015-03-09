@@ -1,12 +1,13 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user
+from irc3.plugins.command import command
+import irc3
 from subprocess import PIPE, Popen, CalledProcessError
 import os
 
 
-class Scheme(CmdsProvider):
+@irc3.plugin
+class Scheme(object):
 
-    def __init__(self):
+    def __init__(self, bot):
         self.cmds = {
             'scheme': {
                 'function': self.cmd_eval,
@@ -18,6 +19,7 @@ class Scheme(CmdsProvider):
         self.bin = os.path.join(
             dirname, '../../scripts/scheme-sandbox/sandboxed'
         )
+
 
     def truncate_output(self, data, maxcols, maxlines):
         lines = data.decode('utf-8').split("\n")
@@ -37,10 +39,13 @@ class Scheme(CmdsProvider):
             output.append(result)
         return output
 
-    def cmd_eval(self, command, data):
-        splitcmd = [a.strip() for a in command.split(':')]
-        command = splitcmd[0]
-        code = splitcmd[1]
+    @command(permission='view', name='scheme')
+    def cmd_eval(self, mask, target, args):
+        """scheme: Run some scheme
+
+            %%scheme <code> ...
+        """
+        code = ' '.join(args['<code>'])
         proc = Popen(
             [self.bin],
             stdin=PIPE,
@@ -52,9 +57,9 @@ class Scheme(CmdsProvider):
             outs, errs = proc.communicate(input=code.encode('UTF-8'))
         except OSError as e:
             proc.kill()
-            return reply_to_user(data, 'Subprocess error', e)
+            return 'Subprocess error: %s' % e.msg
 
         if errs:
-            return reply_to_user(data, self.truncate_output(errs, 200, 1))
+            return self.truncate_output(errs, 200, 1)
         else:
-            return reply_to_user(data, self.truncate_output(outs, 200, 5))
+            return self.truncate_output(outs, 200, 5)

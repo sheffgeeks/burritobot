@@ -1,112 +1,87 @@
-from burrito.cmdsprovider import CmdsProvider
-from burrito.utils import reply_to_user, prettier_date
+from irc3.plugins.command import command
+import irc3
+from burrito.utils import prettier_date
 from datetime import datetime
-import shelve
 
 
 ENROUTE_CMDS = ['->', '=>']
 LOCATION_CMDS = ['@']
 NOLOC = ['none', 'nul', 'null', 'remove', 'nowhere', 'awesome']
+DTFMT = '%Y-%m-%d %H:%M:%S.%f'
+LOCATION_TIMEOUT = 1209600 # 1 fortnight
 
 
-class LocatorCmds(CmdsProvider):
+@irc3.plugin
+class LocatorCmds(object):
     loc_file = 'locations'
 
-    def __init__(self):
-        whereis = {'function':  self.cmd_whereis,
-                   'description': "attempts to tell you where someone is",
-                   'args': ['nick']}
-        whereiseveryone = {
-            'function': self.cmd_whereiseveryone,
-            'description': "reports all known last locations",
-            'aliases': ['whereiseverybody', 'whereseveryone',
-                        'whereseverybody'],
-        }
-        self.cmds = {'whereis': whereis,
-                     'whereiseveryone': whereiseveryone,
-                     }
+    def __init__(self, bot):
+        self.bot = bot
 
-    def cmd_whereiseveryone(self, command, data):
-        try:
-            loc_data = shelve.open(self.loc_file)
-            asker = data['source_user']
-            reply = [
-                '_{0}_: {1} ({2})'.format(nick, loc[-1]['where'],
-                                          prettier_date(loc[-1]['when']))
-                for nick, loc in loc_data.items()
-                if nick != asker and loc[-1]['where'].lower() not in NOLOC
-            ]
-            if not reply:
-                if asker in loc_data:
-                    reply = ['You are the only one I know about!']
-                else:
-                    reply = ['Nobody has told me anything!']
-        except:
-            reply = ['(shh.. someone made me do something wrong!)']
-        finally:
-            loc_data.close()
-        return reply_to_user(data, reply)
+    @command(permission='view', name='whereis')
+    def cmd_whereis(self, mask, target, args):
+        """Get locations
 
-    def cmd_whereis(self, command, data):
-        splitcmd = [a.strip() for a in command.split(':')]
-        who = splitcmd[1]
-        reply = []
-        try:
-            loc_data = shelve.open(self.loc_file)
-            if who not in loc_data:
-                replystr = "No idea!"
-            elif loc_data[who][-1]['where'].lower() in NOLOC:
-                replystr = "Who knows?"
-            else:
-                replyfmtstr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
-                replydict = {}
-                replydict['who'] = ('you' if who == data['source_user']
-                                    else who)
-                replydict.update(loc_data[who][-1])
-                replydict['whenstr'] = prettier_date(replydict['when'])
-                replystr = replyfmtstr % replydict
-        except:
-            reply = ['(shh.. someone made me do something wrong!)']
-        finally:
-            reply.append(replystr)
-            loc_data.close()
+            %%whereis <user>
+            %%whereis <user> <channel>
+        """
+        user = args['<user>']
+        channel = args['<channel>']
+        if not channel:
+            # we'll not care to check if target is actually a channel
+            channel = target
+        loc_data = self.get_entry(channel, user)
+        if not loc_data:
+            replystr = "No idea!"
+        elif loc_data['where'].lower() in NOLOC:
+            replystr = "Who knows?"
+        else:
+            ts = datetime.strptime(loc_data['when'], DTFMT)
+            replyfmtstr = "%(who)s %(atstr)s %(where)s (%(whenstr)s)"
+            if (datetime.now() - ts).total_seconds() > LOCATION_TIMEOUT:
+                self.bot.log.info(
+                    'Location: {nick} last seen > {time}s ago'
+                    .format(nick=mask.nick,
+                            time=LOCATION_TIMEOUT)
+                )
+                replyfmtstr = "I vaguely remember %(who)s... so long ago!"
+            replydict = {}
+            replydict['who'] = 'you' if mask.nick == user else user
+            replydict.update(loc_data)
+            replydict['whenstr'] = prettier_date(ts)
+            replystr = replyfmtstr % replydict
+        if target.is_channel:
+            return "{user}: {reply}".format(user=mask.nick, reply=replystr)
+        return replystr
 
-        return reply_to_user(data, reply)
+    @irc3.event(irc3.rfc.ACTION)
+    def on_privmsg(self, mask=None, event=None, target=None, data=None):
+        when = datetime.now()
+        locationcmds = [cmd for cmd in LOCATION_CMDS if data.startswith(cmd)]
+        enroutecmds = [cmd for cmd in ENROUTE_CMDS if data.startswith(cmd)]
+        if locationcmds:
+            cmd = locationcmds[0]
+            atstr = '@'
+        elif enroutecmds:
+            cmd = enroutecmds[0]
+            atstr = '=>'
+        else:
+            return
 
-    def add_entry(self, nick, when, where, atstr='@'):
-        entry = {'when': when,
+        where = cmd.join(data.split(cmd)[1:]).strip()
+        nick = mask.lnick
+        self.add_entry(target, nick, when, where, atstr)
+
+    def add_entry(self, channel, nick, when, where, atstr='@'):
+        entry = {'when': when.strftime(DTFMT),
                  'atstr': atstr,
-                 'where': where.strip()}
-        try:
-            loc_data = shelve.open(self.loc_file)
-            if nick not in loc_data:
-                loc_data[nick] = [entry]
-            elif len(loc_data[nick]) < 5:
-                tmp_data = loc_data[nick]
-                tmp_data.append(entry)
-                loc_data[nick] = tmp_data
-            else:
-                loc_data[nick] = loc_data[nick][1:] + [entry]
-        finally:
-            loc_data.close()
+                 'where': where}
+        self.bot.log.info('adding %s %s %s to location db' % (
+                          nick, atstr, where))
+        self.bot.db['_'.join(['location_db', channel, nick])] = entry
 
-    def splitcmd(self, command, op, data):
-        if command.startswith(op):
-            return data['source_user'], command.replace(op, '', 1)
-        return None, None
+    def remove_entry(self, channel, nick):
+        del self.bot.db['_'.join(['location_db', channel, nick])]
 
-    def pre_process(self, command, conn_obj, data):
-        nick, location, atstr = None, None, '->'
-        for op in ENROUTE_CMDS:
-            nick, location = self.splitcmd(command, op, data)
-            if nick is not None:
-                break
-        if nick is None:
-            for op in LOCATION_CMDS:
-                nick, location = self.splitcmd(command, op, data)
-                if nick is not None:
-                    atstr = '@'
-                    break
-        if nick is not None:
-            self.add_entry(nick, datetime.now(), location, atstr)
-        return command, data
+    def get_entry(self, channel, nick):
+        return self.bot.db['_'.join(['location_db', channel, nick])]
