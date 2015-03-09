@@ -107,6 +107,7 @@ def run():
             'burrito.plugins.pip',
             'burrito.plugins.repeats',
             'burrito.plugins.scheme',
+            'burrito.plugins.status',
         ],
         storage='redis://localhost:6379/10').run()
 
