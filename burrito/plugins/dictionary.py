@@ -56,10 +56,10 @@ class DictCmds(object):
         """
         if args['<type>'] in ('trans', 'translate'):
             dbs = self.translate_dbs
-        elif args['<type>'] in ('other', 'normal'):
-            dbs = self.other_dbs
-        else:
+        elif args['<type>'] in ('all',):
             dbs = self.other_dbs + self.translate_dbs
+        else:
+            dbs = self.other_dbs
         dicts = ', '.join(sorted(dbs))
         lines = irc3.utils.split_message('Dictionarys: ' + dicts, 160)
         for line in lines:
