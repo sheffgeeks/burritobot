@@ -18,6 +18,17 @@ class StatusCmds(object):
     def __init__(self, bot):
         self.bot = bot
 
+        try:
+            with open('verblist.txt') as f:
+                for line in f:
+                    try:
+                        verb, response = line.split(':', 1)
+                        self.add_verb(verb, response.strip())
+                    except ValueError:
+                        self.bot.log.warning('bad verb list format')
+        except IOError:
+            self.bot.log.info('no verblist to load')
+
     @command(permission='view', name='status')
     def cmd_status(self, mask, target, args):
         """Get locations
@@ -50,6 +61,10 @@ class StatusCmds(object):
             replydict.update(stat_data)
             if replydict['who'] == 'you' and replydict['statstr'] in YOU_MAP:
                 replydict['statstr'] = YOU_MAP[replydict['statstr']]
+            replacement_verb = self.search_for_verb(replydict['statstr'])
+            if replacement_verb:
+                replydict['statstr'] = replacement_verb
+                
             replydict['whenstr'] = prettier_date(ts)
             replystr = replyfmtstr % replydict
         if target.is_channel:
@@ -59,16 +74,9 @@ class StatusCmds(object):
     @irc3.event(irc3.rfc.ACTION)
     def on_privmsg(self, mask=None, event=None, target=None, data=None):
         when = datetime.now()
-        statcmds = [cmd for cmd in STATUS_CMDS if data.startswith(cmd)]
-        if statcmds:
-            cmd = statcmds[0]
-            statstr = PAST_MAP.get(cmd, cmd)
-        else:
-            return
-
-        status = statstr.join(data.split(cmd)[1:]).strip()
-        nick = mask.nick
-        self.add_entry(target, nick, when, status, statstr)
+        verb, status = data.split(' ',1)
+        if self.search_for_verb(verb):
+            self.add_entry(target, mask.nick, when, status.strip(), verb)
 
     def add_entry(self, channel, nick, when, status, statstr='is'):
         entry = {'when': when.strftime(DTFMT),
@@ -76,10 +84,21 @@ class StatusCmds(object):
                  'status': status}
         self.bot.log.info('adding %s %s %s to status db' % (
                           nick, statstr, status))
-        self.bot.db['_'.join(['status_db', channel, nick])] = entry
+        self.bot.db['::'.join(['status_db', channel, nick])] = entry
+
+    def search_for_verb(self, verb):
+        if verb == 'is':
+            return verb
+        resp_dict = self.bot.db['::'.join(('verblist_db', verb))]
+        return resp_dict['response'] if resp_dict else None
+
+    def add_verb(self, verb, response):
+        self.bot.db['::'.join(('verblist_db', verb))] = {'response': response}
 
     def remove_entry(self, channel, nick):
+        del self.bot.db['::'.join(['status_db', channel, nick])]
         del self.bot.db['_'.join(['status_db', channel, nick])]
 
     def get_entry(self, channel, nick):
-        return self.bot.db['_'.join(['status_db', channel, nick])]
+        return (self.bot.db['::'.join(['status_db', channel, nick])]
+                or self.bot.db['_'.join(['status_db', channel, nick])])
